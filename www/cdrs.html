@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Charge Detail Records - ACME Fleet</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+    <style>
+        .filter-panel {
+            background: #f4f6f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .pagination-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="index.html" class="nav-link">Home</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <a href="index.html" class="brand-link">
+            <i class="fas fa-charging-station brand-image"></i>
+            <span class="brand-text font-weight-light">ACME Fleet</span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="locations.html" class="nav-link">
+                            <i class="nav-icon fas fa-map-marker-alt"></i>
+                            <p>Charging Locations</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="cdrs.html" class="nav-link active">
+                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                            <p>Charge Records (CDRs)</p>
+                        </a>
+                    </li>
+                    <li class="nav-header">OCPI API</li>
+                    <li class="nav-item">
+                        <a href="http://localhost:5055/swagger" target="_blank" class="nav-link">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>API Documentation</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Charge Detail Records</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="index.html">Dashboard</a></li>
+                            <li class="breadcrumb-item active">CDRs</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Filter Panel -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="filter-panel">
+                            <h5><i class="fas fa-filter"></i> Filters (OCPI Standard)</h5>
+                            <form id="filterForm">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Date From</label>
+                                            <input type="datetime-local" class="form-control" id="dateFrom">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Date To</label>
+                                            <input type="datetime-local" class="form-control" id="dateTo">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label>Offset</label>
+                                            <input type="number" class="form-control" id="offset" value="0" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label>Limit</label>
+                                            <input type="number" class="form-control" id="limit" value="25" min="1" max="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label>&nbsp;</label>
+                                            <button type="submit" class="btn btn-primary btn-block">
+                                                <i class="fas fa-search"></i> Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination Info -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="pagination-info" id="paginationInfo" style="display: none;">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <strong>Showing:</strong> <span id="showingRange"></span> of <span id="totalCount"></span> records
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <button class="btn btn-sm btn-secondary" id="prevPage" disabled>
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary" id="nextPage" disabled>
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="statTotalSessions">-</h3>
+                                <p>Total Sessions</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-charging-station"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 id="statTotalEnergy">-</h3>
+                                <p>Total Energy (kWh)</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-bolt"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3 id="statTotalCost">-</h3>
+                                <p>Total Revenue (€)</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-euro-sign"></i></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-danger">
+                            <div class="inner">
+                                <h3 id="statAvgEnergy">-</h3>
+                                <p>Avg Energy/Session</p>
+                            </div>
+                            <div class="icon"><i class="fas fa-chart-line"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CDRs Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Charge Detail Records</h3>
+                                <div class="card-tools">
+                                    <span class="badge badge-primary" id="cdrCount">Loading...</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="loadingIndicator" class="text-center" style="padding: 50px;">
+                                    <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                                    <p class="mt-3">Loading charge detail records...</p>
+                                </div>
+                                <div id="tableContainer" style="display: none;">
+                                    <table id="cdrsTable" class="table table-bordered table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Session ID</th>
+                                                <th>Start Time</th>
+                                                <th>End Time</th>
+                                                <th>Duration</th>
+                                                <th>Energy (kWh)</th>
+                                                <th>Cost (€)</th>
+                                                <th>Last Updated</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="cdrsBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <strong>ACME Fleet Management &copy; 2025</strong> - OCPI 2.2 Compliant
+        <div class="float-right d-none d-sm-inline-block">
+            <b>Version</b> 1.0.0
+        </div>
+    </footer>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+
+<script>
+const API_BASE = 'http://localhost:5055/ocpi/2.2';
+let currentOffset = 0;
+let currentLimit = 25;
+let nextPageUrl = null;
+
+function formatDateTime(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
+function calculateDuration(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diff = Math.abs(endDate - startDate);
+    const minutes = Math.floor(diff / 1000 / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${minutes}m`;
+}
+
+function buildQueryString() {
+    const params = new URLSearchParams();
+    
+    const dateFrom = $('#dateFrom').val();
+    const dateTo = $('#dateTo').val();
+    const offset = $('#offset').val();
+    const limit = $('#limit').val();
+    
+    if (dateFrom) params.append('date_from', new Date(dateFrom).toISOString());
+    if (dateTo) params.append('date_to', new Date(dateTo).toISOString());
+    if (offset) params.append('offset', offset);
+    if (limit) params.append('limit', limit);
+    
+    return params.toString();
+}
+
+async function loadCDRs() {
+    try {
+        const queryString = buildQueryString();
+        const url = `${API_BASE}/cdrs${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const cdrs = data.data || [];
+        
+        // Parse pagination headers
+        const totalCount = response.headers.get('X-Total-Count');
+        const linkHeader = response.headers.get('Link');
+        
+        // Update pagination info
+        if (totalCount) {
+            const offset = parseInt($('#offset').val()) || 0;
+            const limit = parseInt($('#limit').val()) || 25;
+            const end = Math.min(offset + cdrs.length, totalCount);
+            
+            $('#totalCount').text(totalCount);
+            $('#showingRange').text(`${offset + 1} - ${end}`);
+            $('#paginationInfo').show();
+            
+            // Enable/disable pagination buttons
+            $('#prevPage').prop('disabled', offset === 0);
+            
+            // Check if there's a next link
+            if (linkHeader && linkHeader.includes('rel="next"')) {
+                $('#nextPage').prop('disabled', false);
+                const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+                if (match) nextPageUrl = match[1];
+            } else {
+                $('#nextPage').prop('disabled', true);
+                nextPageUrl = null;
+            }
+        }
+        
+        $('#cdrCount').text(`${cdrs.length} records`);
+        
+        // Calculate statistics
+        const totalSessions = cdrs.length;
+        const totalEnergy = cdrs.reduce((sum, cdr) => sum + cdr.total_energy, 0);
+        const totalCost = cdrs.reduce((sum, cdr) => sum + cdr.total_cost, 0);
+        const avgEnergy = totalSessions > 0 ? totalEnergy / totalSessions : 0;
+        
+        $('#statTotalSessions').text(totalSessions);
+        $('#statTotalEnergy').text(totalEnergy.toFixed(1));
+        $('#statTotalCost').text(`€${totalCost.toFixed(2)}`);
+        $('#statAvgEnergy').text(`${avgEnergy.toFixed(1)} kWh`);
+        
+        // Populate table
+        const tbody = $('#cdrsBody');
+        tbody.empty();
+        
+        if (cdrs.length === 0) {
+            tbody.append(`
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <i class="fas fa-info-circle"></i> No records found
+                    </td>
+                </tr>
+            `);
+        } else {
+            cdrs.forEach(cdr => {
+                const duration = calculateDuration(cdr.start_date_time, cdr.end_date_time);
+                tbody.append(`
+                    <tr>
+                        <td><code>${cdr.id}</code></td>
+                        <td>${formatDateTime(cdr.start_date_time)}</td>
+                        <td>${formatDateTime(cdr.end_date_time)}</td>
+                        <td>${duration}</td>
+                        <td>${cdr.total_energy.toFixed(2)}</td>
+                        <td>€${cdr.total_cost.toFixed(2)}</td>
+                        <td>${formatDateTime(cdr.last_updated)}</td>
+                    </tr>
+                `);
+            });
+        }
+        
+        $('#loadingIndicator').hide();
+        $('#tableContainer').show();
+        
+    } catch (error) {
+        console.error('Error loading CDRs:', error);
+        $('#loadingIndicator').html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error loading CDRs: ${error.message}
+                <br><small>Make sure the API server is running on http://localhost:5055</small>
+            </div>
+        `);
+    }
+}
+
+$('#filterForm').on('submit', function(e) {
+    e.preventDefault();
+    $('#offset').val(0); // Reset offset when applying new filters
+    loadCDRs();
+});
+
+$('#prevPage').on('click', function() {
+    const offset = parseInt($('#offset').val()) || 0;
+    const limit = parseInt($('#limit').val()) || 25;
+    const newOffset = Math.max(0, offset - limit);
+    $('#offset').val(newOffset);
+    loadCDRs();
+});
+
+$('#nextPage').on('click', function() {
+    const offset = parseInt($('#offset').val()) || 0;
+    const limit = parseInt($('#limit').val()) || 25;
+    $('#offset').val(offset + limit);
+    loadCDRs();
+});
+
+$(document).ready(function() {
+    loadCDRs();
+});
+</script>
+</body>
+</html>
